@@ -20,7 +20,7 @@
 
 #include <msp430.h>
 
-volatile unsigned int temp;
+volatile unsigned int temp,stpcnt;
 unsigned char of,TXData,LSBs,again;		// txdata Used to hold TX data,again used to notify ready to calculate tdif
 unsigned short int diffus;		//16-bit
 int main(void)
@@ -40,7 +40,7 @@ int main(void)
   UCB0CTL0 = UCMODE_3 + UCSYNC;             // I2C Slave, synchronous mode
   UCB0I2COA = 0x48;                         // Own Address is 048h
   UCB0CTL1 &= ~UCSWRST;                     // Clear SW reset, resume operation
-  UCB0I2CIE |= UCSTTIE;                     // Enable STT interrupt
+  UCB0I2CIE |= UCSTPIE;                     // Enable STT interrupt
   IE2 |= UCB0TXIE;                          // Enable TX interrupt
   __bis_SR_register(GIE);
   while (1)
@@ -82,8 +82,9 @@ void __attribute__ ((interrupt(USCIAB0RX_VECTOR))) USCIAB0RX_ISR (void)
 #else
 #error Compiler not supported!
 #endif
-{
-  UCB0STAT &= ~UCSTTIFG;                    // Clear start condition int flag
+{stpcnt+=1;
+	LSBs=0;									//transmit starts with msbs
+  UCB0STAT &= ~UCSTPIFG;                    // Clear stp condition int flag
 }
 
 // Timer_A3 Interrupt Vector (TA0IV) handler
